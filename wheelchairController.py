@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from geometry_msgs.msg import Twist
+from wheelchair.msg import gaze_msg
 import RPi.GPIO as GPIO   # Import the GPIO library.
 import time               # Import time library
 
@@ -18,45 +18,82 @@ GPIO.setup(13, GPIO.IN)  # Set GPIO pin 11 to input mode. Angular Z  black wire
 bluePin = GPIO.PWM(18, 100)   # Initialize PWM on pwmPin 100Hz frequency
 orangePin = GPIO.PWM(16, 100)   # Initialize PWM on pwmPin 100Hz frequency
 
-bluedc=80                              # set blue dc variable to 0 for 0%
-orangedc=80
-bluePin.start(bluedc)
-orangePin.start(orangedc)
-bluePin.ChangeDutyCycle(bluedc)
-orangePin.ChangeDutyCycle(orangedc)
+MAXPWM = 92
+MINPWM = 62
 
-maxPWM = 92
+bluePWM=0     # set blue PWM variable
+orangePWM=0    # set orange PWM variable
 
-def callback(data):
-    
-    bluedc = 100*(((0.16)*((data.linear.x/10)**3)) + 0.78) #Conversion from linear input to exponential PWM output
-    orangedc = 100*(((0.16)*((data.angular.z/10)**3)) + 0.78)
+bluePin.start(bluePWM) #Start PWM on blue wire
+orangePin.start(orangePWM) #Start PWM on orange wire
+bluePin.ChangeDutyCycle(bluePWM)
+orangePin.ChangeDutyCycle(orangePWM)
 
-    #Ensuring PWM does not exceed max allowable
-    if(bluedc > maxPWM):
-        bluedc = maxPWM
-        
-    if(orangedc > maxPWM):
-        orangedc = maxPWM
+class WheelchairController:
 
-    bluePin.ChangeDutyCycle(bluedc) #Updating PWM for linear x
-    orangePin.ChangeDutyCycle(orangedc) #Updating PWM for angular z
+    sampleCountAngZ = 0
+    sampleCountLinX = 0
+    totalXVal = 0
+    totalZVal = 0
 
-    print(bluedc)
+    def __init__(self):
+        rospy.init_node('wheelChairListener', anonymous=True)
+        rospy.Subscriber("gaze_info", gaze_msg, self.callback)
 
+    def callback(self, data):
+        self.incrementLinX(data.lin_x)
+        self.incrementAngZ(data.ang_z)
 
-def listener():
-    # In ROS, nodes are uniquely named. If two nodes with the same
-    # name are launched, the previous one is kicked off. The
-    # anonymous=True flag means that rospy will choose a unique
-    # name for our 'listener' node so that multiple listeners can
-    # run simultaneously.
-    rospy.init_node('wheelChairListener', anonymous=True)
+        if(self.sampleCountAngZ >= 300):
+            x = self.averageLinX()
+            z = self.averageAngZ()
+            print(x,z)
+            self.pwmHandler(x, z)
 
-    rospy.Subscriber("cmd_vel", Twist, callback)
+    def pwmHandler(self, lin_x, ang_z):
+        #global bluePWM
+        #global orangePWM
 
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
+        # Conversion from linear input to exponential PWM output
+        bluePWM = 100 * (((0.16) * ((lin_x / 10) ** 3)) + 0.78)
+        orangePWM = 100 * (((0.16) * ((ang_z / 10) ** 3)) + 0.78)
+
+        # Ensuring PWM does not exceed limits
+        if (bluePWM > MAXPWM):
+            bluePWM = MAXPWM
+
+        if (orangePWM > MAXPWM):
+            orangePWM = MAXPWM
+
+        if (bluePWM < MINPWM):
+            bluePWM = MINPWM
+
+        if (orangePWM < MINPWM):
+            orangePWM = MINPWM
+
+        bluePin.ChangeDutyCycle(bluePWM)  # Updating PWM for linear x
+        orangePin.ChangeDutyCycle(orangePWM)  # Updating PWM for angular z
+
+    def incrementLinX(self, sample):
+        self.sampleCountLinX += 1
+        self.totalXVal += sample
+
+    def incrementAngZ(self, sample):
+        self.sampleCountAngZ += 1
+        self.totalZVal += sample
+
+    def averageAngZ(self):
+        average = self.totalZVal / self.sampleCountAngZ
+        self.sampleCountAngZ = 0
+        self.totalZVal = 0
+        return average
+
+    def averageLinX(self):
+        average = self.totalXVal / self.sampleCountLinX
+        self.sampleCountAngX = 0
+        self.totalXVal = 0
+        return average
 
 if __name__ == '__main__':
-    listener()
+    WCController = WheelchairController()
+    rospy.spin()
