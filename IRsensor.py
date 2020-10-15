@@ -22,13 +22,13 @@ GPIO.setmode(GPIO.BOARD)  # Set Pi to use pin number when referencing GPIO pins.
 
 GPIO.setup(16, GPIO.IN)  # Set GPIO pin 16 to input
 
-GPIO.setup(11, GPIO.IN) # Set GPIO pin 14 to input
+GPIO.setup(11, GPIO.IN) # Set GPIO pin 11 to input
 
-GPIO.setup(13, GPIO.IN)  # gpio 15 as input
+GPIO.setup(13, GPIO.IN)  # gpio 13 as input
 
 GPIO.setup(18, GPIO.OUT)  # Set GPIO pin 18 to output mode.
 
-GPIO.setup(15, GPIO.OUT)
+GPIO.setup(15, GPIO.OUT)  # Set GPIO pin 15 to output mode.
 
 bluePin = GPIO.PWM(18, 100)     # Initialize PWM on pwmPin 100Hz frequency
 
@@ -65,7 +65,7 @@ def talker():   # publisher
 
     rate = rospy.Rate(10) # 10hz
 
-    cmd_vel.linear.x = 0.5
+    cmd_vel.linear.x = 0.1
     
     cmd_vel.linear.z = 0.0
 
@@ -98,14 +98,65 @@ def irsensor():
 
 
 # note the PWM i have yet to change based on which sensor is detected
+    if ( (GPIO.input(13) == True) and (GPIO.input(11) == True)):  # right and middle goes left
 
-    if(GPIO.input(16) == True):     # left sensor detects something go right 
+        print("right/middle sensor detected, turns left")
 
-        print("obstacle detected")
+        cmd_vel.linear.x = 0
+    
+        cmd_vel.angular.z = -1
+
+        orangedc = 76
+
+        orangePin.ChangeDutyCycle(orangedc)
+
+        bluedc = 76
+
+        bluePin.ChangeDutyCycle(bluedc)
+        
+        
+        
+    elif ((GPIO.input(16) == True) and (GPIO.input(11) == True)):  # left and middle sensor detect goes right
+
+        print("left/middle sensor detected, turns right")
+
+        cmd_vel.linear.x = 0
+    
+        cmd_vel.angular.z = 1
+
+        orangedc = 76
+
+        orangePin.ChangeDutyCycle(orangedc)
+
+        bluedc = 76
+
+        bluePin.ChangeDutyCycle(bluedc)
+        
+        
+    
+    elif ((GPIO.input(16) == True) and (GPIO.input(11) == True) and (GPIO.input(13) == True)) :  # all 3 sensors detect back up and go right
+
+        print("all sesnors detected, back up turns right")
+
+        cmd_vel.linear.x = -.3
+    
+        cmd_vel.angular.z = -1
+
+        orangedc = 76
+
+        orangePin.ChangeDutyCycle(orangedc)
+
+        bluedc = 76
+
+        bluePin.ChangeDutyCycle(bluedc)
+
+    elif(GPIO.input(16) == True):     # left sensor detects something go right 
+
+        print("Left sensor detected, turns right")
 
         cmd_vel.linear.x = 0 # stop going forward
         
-        cmd_vel.linear.z = 0.5 # robot goes right
+        cmd_vel.angular.z = 1 # robot goes right
 
         orangedc = 76
 
@@ -118,13 +169,13 @@ def irsensor():
 
 
 
-    elif (GPIO.input(11) == True): # middle sensor detects back up and go right till it does not detect obstacle
+    elif (GPIO.input(11) == True): # middle sensor detects goes back left till it does not detect obstacle
 
-        print("obstacle detected")
+        print("middle sensor detected, backs left")
 
-        cmd_vel.linear.x = -0.5
+        cmd_vel.linear.x = -0.3
         
-        cmd_vel.linear.z = 0.5
+        cmd_vel.angular.z = -1
         
         orangedc = 76
 
@@ -139,11 +190,11 @@ def irsensor():
 
     elif (GPIO.input(13) == True):  # right sensor detects something go left
 
-        print("obstacle detected")
+        print("right sensor detected, turns left")
 
         cmd_vel.linear.x = 0
     
-        cmd_vel.linear.z = -0.5
+        cmd_vel.angular.z = -1
 
         orangedc = 76
 
@@ -152,33 +203,20 @@ def irsensor():
         bluedc = 76
 
         bluePin.ChangeDutyCycle(bluedc)
+        
+        
+        
 
-
-    elif (GPIO.input(13) == True):  # if all sensor detect something stop now and back up and go right
-
-        print("obstacle detected")
-
-        cmd_vel.linear.x = -0.5
-    
-        cmd_vel.linear.z = 0.5
-    
-        orangedc = 76
-
-        orangePin.ChangeDutyCycle(orangedc)
-
-        bluedc = 76
-
-        bluePin.ChangeDutyCycle(bluedc)
 
 
 
     else:   # if no sensor detects anything then continue straight
 
-        print("no obstacle")
+        print("no obstacle, goes straight")
 
-        cmd_vel.linear.x = 0.5 
+        cmd_vel.linear.x = 0.1 
     
-        cmd_vel.linear.z = 0
+        cmd_vel.angular.z = 0
     
         orangedc = 96.3
 
@@ -193,6 +231,3 @@ def irsensor():
 if __name__ == '__main__':
 
     talker()
-    
-    
-    
