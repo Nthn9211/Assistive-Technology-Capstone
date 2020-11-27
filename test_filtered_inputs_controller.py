@@ -7,7 +7,6 @@ import time               # Import time library
 import serial
 
 GPIO.setmode(GPIO.BOARD)  # Set Pi to use pin number when referencing GPIO pins.
-
 GPIO.setwarnings(False)
 GPIO.setup(18, GPIO.OUT)  # Set GPIO pin 18 to output mode. Blue wire
 GPIO.setup(16, GPIO.OUT)  # Set GPIO pin 16 to output mode. Orange wire
@@ -29,7 +28,6 @@ orangePin.ChangeDutyCycle(orangePWM)
 
 ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
 ser.flush()
-
 class WheelchairController:
 
     def __init__(self):
