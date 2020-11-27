@@ -16,8 +16,8 @@ class mouseReader:
     def __init__(self):
         #Setting up the publisher and mouse listener
         rospy.init_node('glassesSimPublisher', anonymous=True)
-        self.glassesSimPub = rospy.Publisher("simGlassValues", gaze_msg, queue_size=10)
-        rate = rospy.Rate(10)  # 10hz
+        self.glassesSimPub = rospy.Publisher("simGlassValues", gaze_msg, queue_size=100)
+        #rate = rospy.Rate(2)  # 10hz
         listener = mouse.Listener(
             on_move=self.on_move,
             on_click=self.on_click)
@@ -47,6 +47,7 @@ class mouseReader:
             print(gazeMessage)
             #Publishing gaze message
             self.glassesSimPub.publish(gazeMessage)
+            rospy.sleep(1.)
 
 if __name__ == '__main__':
     testObj = mouseReader()
