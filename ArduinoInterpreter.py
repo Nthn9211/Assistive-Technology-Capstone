@@ -64,7 +64,7 @@ def callback(data):
     # Checking for valid input
     pubcheck(data)
 
-    if armed and (data.conf_0 == 1 and data.conf_1 == 1):
+    if armed and (data.conf_0 == 1 and data.conf_1 == 1): #Change conf statement to 'or'? That way control can still be done even if only one eye works
         # Conversion from linear input to exponential PWM output
         bluePWM = ((26.5 * (data.lin_x ** 3)) + 128)
         orangePWM = ((26.5 * ((-1 * data.ang_z) ** 3)) + 128)
