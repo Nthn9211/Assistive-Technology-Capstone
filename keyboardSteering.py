@@ -1,3 +1,4 @@
+# This file is only usable on a Raspberry Pi - it will not work on the current design which uses a NUC and Arduino to generate PWM signals
 import pygame
 from pygame.locals import *
 
